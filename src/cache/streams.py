@@ -24,6 +24,7 @@ STREAM_TICKER_V2 = "kalshi:ticker_v2"
 STREAM_ORDERBOOK_DELTAS = "kalshi:orderbook:deltas"
 STREAM_ORDERBOOK_SNAPSHOTS = "kalshi:orderbook:snapshots"
 STREAM_LIFECYCLE = "kalshi:lifecycle"
+STREAM_EVENT_LIFECYCLE = "kalshi:event_lifecycle"
 STREAM_SYSTEM = "kalshi:system"
 
 # Max stream length (approximate trimming)
@@ -90,6 +91,17 @@ class RedisStreamPublisher:
             approximate=True,
         )
         self._increment(STREAM_LIFECYCLE)
+        return msg_id
+
+    async def publish_event_lifecycle(self, event: Any) -> str:
+        """Publish an event-level lifecycle message."""
+        msg_id = await self._redis.xadd(
+            STREAM_EVENT_LIFECYCLE,
+            {"data": event.to_redis_payload()},
+            maxlen=STREAM_MAXLEN,
+            approximate=True,
+        )
+        self._increment(STREAM_EVENT_LIFECYCLE)
         return msg_id
 
     async def publish_system(self, payload: str) -> str:

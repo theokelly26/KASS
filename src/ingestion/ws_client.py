@@ -28,6 +28,7 @@ from src.models import (
     OrderbookDelta,
     OrderbookSnapshot,
     MarketLifecycleEvent,
+    EventLifecycleEvent,
 )
 
 logger = structlog.get_logger(__name__)
@@ -366,6 +367,15 @@ class KalshiWSManager:
             await self._publisher.publish_lifecycle(event)
         except Exception:
             logger.exception("lifecycle_parse_error", msg=msg_data)
+
+    async def _handle_event_lifecycle(self, msg: dict) -> None:
+        """Parse event-level lifecycle message, publish to Redis."""
+        msg_data = msg.get("msg", {})
+        try:
+            event = EventLifecycleEvent.model_validate(msg_data)
+            await self._publisher.publish_event_lifecycle(event)
+        except Exception:
+            logger.exception("event_lifecycle_parse_error", msg=msg_data)
 
     async def _handle_subscribed(self, msg: dict) -> None:
         """Handle subscription confirmation."""

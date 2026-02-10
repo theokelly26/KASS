@@ -10,6 +10,7 @@ MESSAGE_HANDLERS: dict[str, str] = {
     "orderbook_snapshot": "_handle_orderbook_snapshot",
     "orderbook_delta": "_handle_orderbook_delta",
     "market_lifecycle_v2": "_handle_lifecycle",
+    "event_lifecycle": "_handle_event_lifecycle",
     "subscribed": "_handle_subscribed",
     "unsubscribed": "_handle_unsubscribed",
     "error": "_handle_error",

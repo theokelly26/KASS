@@ -2,7 +2,7 @@ from .trade import KalshiTrade
 from .ticker import KalshiTickerV2
 from .orderbook import OrderbookSnapshot, OrderbookDelta
 from .market import KalshiMarket
-from .lifecycle import MarketLifecycleEvent
+from .lifecycle import MarketLifecycleEvent, EventLifecycleEvent
 
 __all__ = [
     "KalshiTrade",
@@ -11,4 +11,5 @@ __all__ = [
     "OrderbookDelta",
     "KalshiMarket",
     "MarketLifecycleEvent",
+    "EventLifecycleEvent",
 ]

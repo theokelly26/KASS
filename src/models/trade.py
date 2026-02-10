@@ -14,9 +14,9 @@ class KalshiTrade(BaseModel):
 
     trade_id: str
     market_ticker: str
-    yes_price: int = Field(ge=0, le=99, description="Price in cents (0-99)")
+    yes_price: int = Field(ge=0, le=100, description="Price in cents (0-100)")
     yes_price_dollars: str = Field(description="e.g. '0.360'")
-    no_price: int = Field(ge=0, le=99)
+    no_price: int = Field(ge=0, le=100)
     no_price_dollars: str
     count: int = Field(ge=1, description="Contract count")
     count_fp: str = Field(description="Fixed-point e.g. '136.00'")
