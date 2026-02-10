@@ -5,10 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 
 class KalshiConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
     api_key_id: str = Field(default="", alias="KALSHI_API_KEY_ID")
     private_key_path: Path = Field(default=Path("keys/kalshi_private_key.pem"), alias="KALSHI_PRIVATE_KEY_PATH")
     api_base_url: str = Field(default="https://api.elections.kalshi.com", alias="KALSHI_API_BASE_URL")
@@ -18,6 +21,7 @@ class KalshiConfig(BaseSettings):
 
 
 class PostgresConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
     host: str = Field(default="localhost", alias="POSTGRES_HOST")
     port: int = Field(default=5432, alias="POSTGRES_PORT")
     db: str = Field(default="kalshi_alpha", alias="POSTGRES_DB")
@@ -32,6 +36,7 @@ class PostgresConfig(BaseSettings):
 
 
 class RedisConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
     host: str = Field(default="localhost", alias="REDIS_HOST")
     port: int = Field(default=6379, alias="REDIS_PORT")
     db: int = Field(default=0, alias="REDIS_DB")
@@ -44,6 +49,7 @@ class RedisConfig(BaseSettings):
 
 
 class MonitoringConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
     telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
     telegram_chat_id: str = Field(default="", alias="TELEGRAM_CHAT_ID")
     health_check_interval: int = Field(default=30, alias="HEALTH_CHECK_INTERVAL")
@@ -51,6 +57,7 @@ class MonitoringConfig(BaseSettings):
 
 
 class TuningConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
     trade_writer_batch_size: int = Field(default=100, alias="TRADE_WRITER_BATCH_SIZE")
     trade_writer_flush_interval: float = Field(default=5.0, alias="TRADE_WRITER_FLUSH_INTERVAL")
     orderbook_snapshot_interval: int = Field(default=60, alias="ORDERBOOK_SNAPSHOT_INTERVAL")
@@ -61,6 +68,7 @@ class TuningConfig(BaseSettings):
 
 
 class LoggingConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     log_format: str = Field(default="json", alias="LOG_FORMAT")
 
