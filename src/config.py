@@ -9,8 +9,8 @@ from pydantic_settings import BaseSettings
 
 
 class KalshiConfig(BaseSettings):
-    api_key_id: str = Field(alias="KALSHI_API_KEY_ID")
-    private_key_path: Path = Field(alias="KALSHI_PRIVATE_KEY_PATH")
+    api_key_id: str = Field(default="", alias="KALSHI_API_KEY_ID")
+    private_key_path: Path = Field(default=Path("keys/kalshi_private_key.pem"), alias="KALSHI_PRIVATE_KEY_PATH")
     api_base_url: str = Field(default="https://api.elections.kalshi.com", alias="KALSHI_API_BASE_URL")
     ws_url: str = Field(
         default="wss://api.elections.kalshi.com/trade-api/ws/v2", alias="KALSHI_WS_URL"

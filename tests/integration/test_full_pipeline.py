@@ -13,7 +13,6 @@ import asyncio
 import pytest
 
 
-@pytest.mark.skip(reason="Requires running Postgres + Redis infrastructure")
 class TestFullPipeline:
     """
     End-to-end integration test:

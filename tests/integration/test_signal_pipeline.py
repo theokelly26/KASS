@@ -17,7 +17,6 @@ from src.signals.models import (
 )
 
 
-@pytest.mark.skip(reason="Requires running Redis infrastructure")
 class TestSignalPipeline:
     """End-to-end signal pipeline integration test."""
 
