@@ -1,7 +1,7 @@
 [project]
 name = "kalshi-alpha"
 version = "0.1.0"
-description = "Kalshi Alpha Signal System (KASS) - Phase 1: Data Infrastructure & Ingestion"
+description = "Kalshi Alpha Signal System (KASS) - Real-time prediction market signal system"
 requires-python = ">=3.11"
 dependencies = [
     "websockets>=12.0",
@@ -13,7 +13,12 @@ dependencies = [
     "httpx>=0.25",
     "structlog>=23.0",
     "orjson>=3.9",
+    "typer>=0.9",
+    "rich>=13.0",
 ]
+
+[project.scripts]
+kass = "src.cli.main:app"
 
 [project.optional-dependencies]
 dev = [

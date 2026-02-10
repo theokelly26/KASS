@@ -1,0 +1,408 @@
+{
+  "uid": "kass-system-health",
+  "title": "KASS System Health",
+  "description": "Real-time monitoring of KASS ingestion pipelines, signal generation, and database health.",
+  "tags": ["kass", "system", "health"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "timeRange",
+        "type": "interval",
+        "label": "Time Range",
+        "current": {
+          "text": "6h",
+          "value": "6h"
+        },
+        "options": [
+          { "text": "5m", "value": "5m", "selected": false },
+          { "text": "15m", "value": "15m", "selected": false },
+          { "text": "1h", "value": "1h", "selected": false },
+          { "text": "6h", "value": "6h", "selected": true },
+          { "text": "12h", "value": "12h", "selected": false },
+          { "text": "24h", "value": "24h", "selected": false },
+          { "text": "2d", "value": "2d", "selected": false },
+          { "text": "7d", "value": "7d", "selected": false }
+        ],
+        "query": "5m,15m,1h,6h,12h,24h,2d,7d",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Ingestion Rate",
+      "description": "Messages ingested per second across all data feeds, bucketed by minute.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "messages/sec",
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "ops",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 0 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "trades/sec" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "tickers/sec" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "orderbook/sec" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "time_series",
+          "rawSql": "SELECT\n  time_bucket('1 minute', ts) AS time,\n  COUNT(*) / 60.0 AS \"trades/sec\"\nFROM trades\nWHERE $__timeFilter(ts)\nGROUP BY time\nORDER BY time;",
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "time_series",
+          "rawSql": "SELECT\n  time_bucket('1 minute', ts) AS time,\n  COUNT(*) / 60.0 AS \"tickers/sec\"\nFROM ticker_updates\nWHERE $__timeFilter(ts)\nGROUP BY time\nORDER BY time;",
+          "editorMode": "code"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "time_series",
+          "rawSql": "SELECT\n  time_bucket('1 minute', ts) AS time,\n  COUNT(*) / 60.0 AS \"orderbook/sec\"\nFROM orderbook_deltas\nWHERE $__timeFilter(ts)\nGROUP BY time\nORDER BY time;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Active Markets",
+      "description": "Count of markets currently in 'open' status.",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#5794F2", "value": null },
+              { "color": "green", "value": 10 }
+            ]
+          },
+          "mappings": [],
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) AS \"Open Markets\"\nFROM markets\nWHERE status = 'open';",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Signal Log Count (24h)",
+      "description": "Total number of signals emitted in the last 24 hours.",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "#EAB839", "value": 100 },
+              { "color": "green", "value": 500 }
+            ]
+          },
+          "mappings": [],
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) AS \"Signals (24h)\"\nFROM signal_log\nWHERE ts > NOW() - INTERVAL '24 hours';",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Database Size",
+      "description": "Total size of the kalshi_alpha database on disk.",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 4 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#5794F2", "value": null }
+            ]
+          },
+          "mappings": [],
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT pg_size_pretty(pg_database_size('kalshi_alpha')) AS \"Database Size\";",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Signal Rate",
+      "description": "Signals generated per 5-minute bucket, broken down by signal type.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "signals",
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "time_series",
+          "rawSql": "SELECT\n  time_bucket('5 minutes', ts) AS time,\n  signal_type,\n  COUNT(*) AS signals\nFROM signal_log\nWHERE $__timeFilter(ts)\nGROUP BY time, signal_type\nORDER BY time;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Data Freshness",
+      "description": "Last-seen timestamp and lag for each critical table. Lag above a few seconds indicates stale data.",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 80 }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Lag" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "#EAB839", "value": 30 },
+                    { "color": "red", "value": 120 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": false, "displayName": "Table" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT 'trades' AS \"Table\", MAX(ts) AS \"Latest\", NOW() - MAX(ts) AS \"Lag\"\nFROM trades\nUNION ALL\nSELECT 'ticker_updates', MAX(ts), NOW() - MAX(ts)\nFROM ticker_updates\nUNION ALL\nSELECT 'signal_log', MAX(ts), NOW() - MAX(ts)\nFROM signal_log\nUNION ALL\nSELECT 'price_snapshots', MAX(ts), NOW() - MAX(ts)\nFROM price_snapshots\nORDER BY 1;",
+          "editorMode": "code"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": ["kass"],
+      "targetBlank": false,
+      "title": "KASS Dashboards",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ]
+}

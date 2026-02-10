@@ -1,0 +1,505 @@
+{
+  "uid": "kass-signal-quality",
+  "title": "KASS Signal Quality",
+  "description": "Analyze signal accuracy, hit rates, composite score distributions, and PnL attribution across all signal types.",
+  "tags": ["kass", "signals", "quality"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "timeRange",
+        "type": "interval",
+        "label": "Time Range",
+        "current": {
+          "text": "6h",
+          "value": "6h"
+        },
+        "options": [
+          { "text": "1h", "value": "1h", "selected": false },
+          { "text": "6h", "value": "6h", "selected": true },
+          { "text": "24h", "value": "24h", "selected": false },
+          { "text": "2d", "value": "2d", "selected": false },
+          { "text": "7d", "value": "7d", "selected": false }
+        ],
+        "query": "1h,6h,24h,2d,7d",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Hit Rate by Signal Type (5m)",
+      "description": "Directional accuracy at the 5-minute horizon, grouped by signal type and direction.",
+      "type": "table",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "#EAB839", "value": 0.45 },
+              { "color": "green", "value": 0.55 }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "hit_rate" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "green", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "total" },
+            "properties": [
+              { "id": "custom.width", "value": 80 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "correct" },
+            "properties": [
+              { "id": "custom.width", "value": 80 }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": true, "displayName": "hit_rate" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT\n  signal_type,\n  direction,\n  COUNT(*) AS total,\n  COUNT(*) FILTER (WHERE correct_5m) AS correct,\n  ROUND(\n    COUNT(*) FILTER (WHERE correct_5m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE correct_5m IS NOT NULL), 0),\n    3\n  ) AS hit_rate\nFROM signal_outcomes\nGROUP BY signal_type, direction\nORDER BY hit_rate DESC NULLS LAST;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Hit Rate Over Time",
+      "description": "Rolling hourly hit rate (5-minute horizon) per signal type. Helps detect regime-dependent signal degradation.",
+      "type": "timeseries",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "hit rate",
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "unit": "percentunit",
+          "decimals": 1,
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 0.5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "time_series",
+          "rawSql": "SELECT\n  time_bucket('1 hour', signal_ts) AS time,\n  signal_type,\n  COUNT(*) FILTER (WHERE correct_5m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE correct_5m IS NOT NULL), 0) AS hit_rate\nFROM signal_outcomes\nWHERE $__timeFilter(signal_ts)\nGROUP BY time, signal_type\nORDER BY time;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Composite Score Distribution",
+      "description": "Distribution of composite scores bucketed into conviction levels. Shows how often each conviction level is triggered.",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 9 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "count",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "strong_yes" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "moderate_yes" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#96D98D", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "neutral" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "moderate_no" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "strong_no" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT\n  CASE\n    WHEN composite_score >= 0.7 THEN 'strong_yes'\n    WHEN composite_score >= 0.3 THEN 'moderate_yes'\n    WHEN composite_score >= -0.3 THEN 'neutral'\n    WHEN composite_score >= -0.7 THEN 'moderate_no'\n    ELSE 'strong_no'\n  END AS bucket,\n  COUNT(*) AS count\nFROM composite_log\nWHERE $__timeFilter(ts)\nGROUP BY bucket\nORDER BY bucket;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Signal PnL by Type",
+      "description": "Expected value (cents) per signal type. Uses 5-minute price moves as PnL proxy. Positive = profitable signal type.",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 9 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "#5794F2", "value": 0 },
+              { "color": "green", "value": 0.01 }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "ev_per_signal" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "green", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "total_ev" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "green", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": true, "displayName": "total_ev" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT\n  signal_type,\n  direction,\n  COUNT(*) AS total_signals,\n  ROUND(AVG(\n    CASE\n      WHEN direction = 'yes' THEN move_5m\n      WHEN direction = 'no' THEN -move_5m\n      ELSE 0\n    END\n  ), 3) AS ev_per_signal,\n  ROUND(SUM(\n    CASE\n      WHEN direction = 'yes' THEN move_5m\n      WHEN direction = 'no' THEN -move_5m\n      ELSE 0\n    END\n  ), 2) AS total_ev\nFROM signal_outcomes\nWHERE move_5m IS NOT NULL\nGROUP BY signal_type, direction\nORDER BY total_ev DESC;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Signal Strength vs Hit Rate",
+      "description": "Signal strength bucketed into deciles, showing how confidence correlates with 5-minute accuracy.",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 9 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_5m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "red", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "green", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": false, "displayName": "strength_bucket" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT\n  CASE\n    WHEN strength >= 0.9 THEN '0.9-1.0'\n    WHEN strength >= 0.8 THEN '0.8-0.9'\n    WHEN strength >= 0.7 THEN '0.7-0.8'\n    WHEN strength >= 0.6 THEN '0.6-0.7'\n    WHEN strength >= 0.5 THEN '0.5-0.6'\n    WHEN strength >= 0.4 THEN '0.4-0.5'\n    WHEN strength >= 0.3 THEN '0.3-0.4'\n    WHEN strength >= 0.2 THEN '0.2-0.3'\n    WHEN strength >= 0.1 THEN '0.1-0.2'\n    ELSE '0.0-0.1'\n  END AS strength_bucket,\n  COUNT(*) AS total,\n  COUNT(*) FILTER (WHERE correct_5m IS NOT NULL) AS evaluated,\n  ROUND(\n    COUNT(*) FILTER (WHERE correct_5m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE correct_5m IS NOT NULL), 0),\n    3\n  ) AS hit_rate_5m,\n  ROUND(AVG(ABS(move_5m)) FILTER (WHERE move_5m IS NOT NULL), 3) AS avg_abs_move\nFROM signal_outcomes\nGROUP BY strength_bucket\nORDER BY strength_bucket DESC;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Signal Count by Hour",
+      "description": "Signal volume per hour, broken down by signal type. Identifies peak activity periods.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 17 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "signals",
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "time_series",
+          "rawSql": "SELECT\n  time_bucket('1 hour', ts) AS time,\n  signal_type,\n  COUNT(*) AS signal_count\nFROM signal_log\nWHERE $__timeFilter(ts)\nGROUP BY time, signal_type\nORDER BY time;",
+          "editorMode": "code"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": ["kass"],
+      "targetBlank": false,
+      "title": "KASS Dashboards",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ]
+}

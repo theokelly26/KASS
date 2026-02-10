@@ -134,5 +134,36 @@ module.exports = {
         PYTHONPATH: ".",
       },
     },
+    // Phase 2.5: Observability Layer
+    {
+      name: "kass-writer-signals",
+      script: "python",
+      args: "-m src.persistence.writers.signal_writer",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
+    {
+      name: "kass-price-snapshots",
+      script: "python",
+      args: "-m src.monitoring.price_snapshots",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
+    {
+      name: "kass-view-refresher",
+      script: "python",
+      args: "-m src.monitoring.view_refresher",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
   ],
 };

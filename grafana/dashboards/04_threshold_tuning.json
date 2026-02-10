@@ -1,0 +1,631 @@
+{
+  "uid": "kass-threshold-tuning",
+  "title": "KASS Threshold Tuning",
+  "description": "Parameter sweep analysis for signal thresholds, composite scores, and cross-market propagation windows.",
+  "tags": ["kass", "tuning", "thresholds"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["10s", "30s", "1m", "5m"],
+    "time_options": ["1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "timeRange",
+        "type": "interval",
+        "label": "Time Range",
+        "current": {
+          "text": "24h",
+          "value": "24h"
+        },
+        "options": [
+          { "text": "6h", "value": "6h", "selected": false },
+          { "text": "24h", "value": "24h", "selected": true },
+          { "text": "2d", "value": "2d", "selected": false },
+          { "text": "7d", "value": "7d", "selected": false },
+          { "text": "30d", "value": "30d", "selected": false }
+        ],
+        "query": "6h,24h,2d,7d,30d",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "VPIN Threshold Sweep",
+      "description": "Hit rates at the 5-minute and 15-minute horizons for VPIN signals, bucketed by VPIN value from metadata. Helps find the optimal VPIN firing threshold.",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_5m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "#73BF69", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_15m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "#73BF69", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avg_ev_5m" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#73BF69", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": false, "displayName": "vpin_bucket" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT\n  CASE\n    WHEN (metadata->>'vpin')::numeric >= 0.9 THEN '0.90-1.00'\n    WHEN (metadata->>'vpin')::numeric >= 0.8 THEN '0.80-0.90'\n    WHEN (metadata->>'vpin')::numeric >= 0.7 THEN '0.70-0.80'\n    WHEN (metadata->>'vpin')::numeric >= 0.6 THEN '0.60-0.70'\n    WHEN (metadata->>'vpin')::numeric >= 0.5 THEN '0.50-0.60'\n    ELSE '< 0.50'\n  END AS vpin_bucket,\n  COUNT(*) AS total,\n  COUNT(*) FILTER (WHERE correct_5m IS NOT NULL) AS evaluated,\n  ROUND(\n    COUNT(*) FILTER (WHERE correct_5m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE correct_5m IS NOT NULL), 0),\n    3\n  ) AS hit_rate_5m,\n  ROUND(\n    COUNT(*) FILTER (WHERE correct_15m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE correct_15m IS NOT NULL), 0),\n    3\n  ) AS hit_rate_15m,\n  ROUND(AVG(\n    CASE\n      WHEN direction = 'yes' THEN move_5m\n      WHEN direction = 'no' THEN -move_5m\n      ELSE 0\n    END\n  ) FILTER (WHERE move_5m IS NOT NULL), 4) AS avg_ev_5m\nFROM signal_outcomes\nWHERE signal_type = 'vpin'\n  AND metadata ? 'vpin'\nGROUP BY vpin_bucket\nORDER BY vpin_bucket;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "OI Z-Score Sweep",
+      "description": "Open interest z-score signal thresholds vs accuracy. Identifies the z-score level where OI signals become predictive.",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_5m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "#73BF69", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_15m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "#73BF69", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avg_ev_5m" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#73BF69", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": false, "displayName": "zscore_bucket" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT\n  CASE\n    WHEN ABS((metadata->>'z_score')::numeric) >= 4.0 THEN '4.0+'\n    WHEN ABS((metadata->>'z_score')::numeric) >= 3.5 THEN '3.5-4.0'\n    WHEN ABS((metadata->>'z_score')::numeric) >= 3.0 THEN '3.0-3.5'\n    WHEN ABS((metadata->>'z_score')::numeric) >= 2.5 THEN '2.5-3.0'\n    WHEN ABS((metadata->>'z_score')::numeric) >= 2.0 THEN '2.0-2.5'\n    WHEN ABS((metadata->>'z_score')::numeric) >= 1.5 THEN '1.5-2.0'\n    ELSE '< 1.5'\n  END AS zscore_bucket,\n  COUNT(*) AS total,\n  COUNT(*) FILTER (WHERE correct_5m IS NOT NULL) AS evaluated,\n  ROUND(\n    COUNT(*) FILTER (WHERE correct_5m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE correct_5m IS NOT NULL), 0),\n    3\n  ) AS hit_rate_5m,\n  ROUND(\n    COUNT(*) FILTER (WHERE correct_15m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE correct_15m IS NOT NULL), 0),\n    3\n  ) AS hit_rate_15m,\n  ROUND(AVG(\n    CASE\n      WHEN direction = 'yes' THEN move_5m\n      WHEN direction = 'no' THEN -move_5m\n      ELSE 0\n    END\n  ) FILTER (WHERE move_5m IS NOT NULL), 4) AS avg_ev_5m\nFROM signal_outcomes\nWHERE signal_type = 'oi_zscore'\n  AND metadata ? 'z_score'\nGROUP BY zscore_bucket\nORDER BY zscore_bucket;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Propagation Window Analysis",
+      "description": "For cross-market propagation signals: how does the lag between source and target market affect accuracy? Helps tune the propagation window parameter.",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 10 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_5m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "#73BF69", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avg_ev_5m" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#73BF69", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": false, "displayName": "lag_bucket" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT\n  CASE\n    WHEN (metadata->>'lag_seconds')::numeric <= 5 THEN '0-5s'\n    WHEN (metadata->>'lag_seconds')::numeric <= 15 THEN '5-15s'\n    WHEN (metadata->>'lag_seconds')::numeric <= 30 THEN '15-30s'\n    WHEN (metadata->>'lag_seconds')::numeric <= 60 THEN '30-60s'\n    WHEN (metadata->>'lag_seconds')::numeric <= 120 THEN '60-120s'\n    ELSE '120s+'\n  END AS lag_bucket,\n  COUNT(*) AS total,\n  COUNT(*) FILTER (WHERE correct_5m IS NOT NULL) AS evaluated,\n  ROUND(\n    COUNT(*) FILTER (WHERE correct_5m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE correct_5m IS NOT NULL), 0),\n    3\n  ) AS hit_rate_5m,\n  ROUND(AVG(\n    CASE\n      WHEN direction = 'yes' THEN move_5m\n      WHEN direction = 'no' THEN -move_5m\n      ELSE 0\n    END\n  ) FILTER (WHERE move_5m IS NOT NULL), 4) AS avg_ev_5m,\n  ROUND(AVG(\n    CASE\n      WHEN direction = 'yes' THEN move_15m\n      WHEN direction = 'no' THEN -move_15m\n      ELSE 0\n    END\n  ) FILTER (WHERE move_15m IS NOT NULL), 4) AS avg_ev_15m\nFROM signal_outcomes\nWHERE signal_type = 'propagation'\n  AND metadata ? 'lag_seconds'\nGROUP BY lag_bucket\nORDER BY lag_bucket;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Composite Threshold Sweep",
+      "description": "Evaluates composite score thresholds against realized PnL. Helps find the minimum composite score for positive expected value.",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 10 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "avg_ev_5m" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#73BF69", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "total_ev_5m" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#73BF69", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_5m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "#73BF69", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": false, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": false, "displayName": "score_threshold" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "WITH composite_with_prices AS (\n  SELECT\n    c.ts,\n    c.market_ticker,\n    c.direction,\n    c.composite_score,\n    c.regime,\n    c.active_signal_count,\n    p_at.yes_price AS price_at_signal,\n    p_5m.yes_price AS price_5m_after\n  FROM composite_log c\n  LEFT JOIN LATERAL (\n    SELECT yes_price\n    FROM price_snapshots ps\n    WHERE ps.market_ticker = c.market_ticker\n      AND ps.ts <= c.ts\n    ORDER BY ps.ts DESC\n    LIMIT 1\n  ) p_at ON true\n  LEFT JOIN LATERAL (\n    SELECT yes_price\n    FROM price_snapshots ps\n    WHERE ps.market_ticker = c.market_ticker\n      AND ps.ts BETWEEN c.ts + INTERVAL '4 minutes' AND c.ts + INTERVAL '6 minutes'\n    ORDER BY ps.ts ASC\n    LIMIT 1\n  ) p_5m ON true\n  WHERE ABS(c.composite_score) >= 0.1\n)\nSELECT\n  CASE\n    WHEN ABS(composite_score) >= 0.9 THEN '0.90+'\n    WHEN ABS(composite_score) >= 0.8 THEN '0.80-0.90'\n    WHEN ABS(composite_score) >= 0.7 THEN '0.70-0.80'\n    WHEN ABS(composite_score) >= 0.6 THEN '0.60-0.70'\n    WHEN ABS(composite_score) >= 0.5 THEN '0.50-0.60'\n    WHEN ABS(composite_score) >= 0.4 THEN '0.40-0.50'\n    WHEN ABS(composite_score) >= 0.3 THEN '0.30-0.40'\n    WHEN ABS(composite_score) >= 0.2 THEN '0.20-0.30'\n    ELSE '0.10-0.20'\n  END AS score_threshold,\n  COUNT(*) AS total,\n  COUNT(*) FILTER (WHERE price_5m_after IS NOT NULL) AS evaluated,\n  ROUND(\n    COUNT(*) FILTER (\n      WHERE price_5m_after IS NOT NULL\n        AND (\n          (direction = 'yes' AND price_5m_after > price_at_signal)\n          OR (direction = 'no' AND price_5m_after < price_at_signal)\n        )\n    )::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE price_5m_after IS NOT NULL), 0),\n    3\n  ) AS hit_rate_5m,\n  ROUND(AVG(\n    CASE\n      WHEN direction = 'yes' THEN (price_5m_after - price_at_signal)::numeric\n      WHEN direction = 'no' THEN (price_at_signal - price_5m_after)::numeric\n      ELSE 0\n    END\n  ) FILTER (WHERE price_5m_after IS NOT NULL), 3) AS avg_ev_5m,\n  ROUND(SUM(\n    CASE\n      WHEN direction = 'yes' THEN (price_5m_after - price_at_signal)::numeric\n      WHEN direction = 'no' THEN (price_at_signal - price_5m_after)::numeric\n      ELSE 0\n    END\n  ) FILTER (WHERE price_5m_after IS NOT NULL), 2) AS total_ev_5m,\n  ROUND(AVG(active_signal_count), 1) AS avg_active_signals\nFROM composite_with_prices\nGROUP BY score_threshold\nORDER BY score_threshold;",
+          "editorMode": "code"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Category Performance",
+      "description": "Signal performance grouped by market series (event category). Reveals which market categories yield the best signal accuracy.",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_5m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "#73BF69", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "hit_rate_15m" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#EAB839", "value": 0.45 },
+                    { "color": "#73BF69", "value": 0.55 }
+                  ]
+                }
+              },
+              { "id": "min", "value": 0 },
+              { "id": "max", "value": 1 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "total_ev_5m" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#73BF69", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avg_ev_per_signal" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-text" }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#73BF69", "value": 0 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "enablePagination": true, "fields": "", "reducer": ["sum"], "show": false },
+        "sortBy": [{ "desc": true, "displayName": "total_ev_5m" }]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "format": "table",
+          "rawSql": "SELECT\n  m.series_ticker,\n  COUNT(*) AS total_signals,\n  COUNT(DISTINCT so.market_ticker) AS markets,\n  COUNT(DISTINCT so.signal_type) AS signal_types,\n  ROUND(\n    COUNT(*) FILTER (WHERE so.correct_5m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE so.correct_5m IS NOT NULL), 0),\n    3\n  ) AS hit_rate_5m,\n  ROUND(\n    COUNT(*) FILTER (WHERE so.correct_15m)::numeric /\n    NULLIF(COUNT(*) FILTER (WHERE so.correct_15m IS NOT NULL), 0),\n    3\n  ) AS hit_rate_15m,\n  ROUND(AVG(\n    CASE\n      WHEN so.direction = 'yes' THEN so.move_5m\n      WHEN so.direction = 'no' THEN -so.move_5m\n      ELSE 0\n    END\n  ) FILTER (WHERE so.move_5m IS NOT NULL), 4) AS avg_ev_per_signal,\n  ROUND(SUM(\n    CASE\n      WHEN so.direction = 'yes' THEN so.move_5m\n      WHEN so.direction = 'no' THEN -so.move_5m\n      ELSE 0\n    END\n  ) FILTER (WHERE so.move_5m IS NOT NULL), 2) AS total_ev_5m\nFROM signal_outcomes so\nJOIN markets m ON m.ticker = so.market_ticker\nWHERE m.series_ticker IS NOT NULL\nGROUP BY m.series_ticker\nHAVING COUNT(*) >= 5\nORDER BY total_ev_5m DESC;",
+          "editorMode": "code"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": ["kass"],
+      "targetBlank": false,
+      "title": "KASS Dashboards",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ]
+}
