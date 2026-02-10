@@ -1,0 +1,10 @@
+CREATE INDEX IF NOT EXISTS idx_trades_market ON trades (market_ticker, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_trades_id ON trades (trade_id);
+CREATE INDEX IF NOT EXISTS idx_ticker_market ON ticker_updates (market_ticker, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_ob_snap_market ON orderbook_snapshots (market_ticker, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_ob_delta_market ON orderbook_deltas (market_ticker, ts DESC);
+CREATE INDEX IF NOT EXISTS idx_markets_event ON markets (event_ticker);
+CREATE INDEX IF NOT EXISTS idx_markets_series ON markets (series_ticker);
+CREATE INDEX IF NOT EXISTS idx_markets_status ON markets (status);
+CREATE INDEX IF NOT EXISTS idx_events_series ON events (series_ticker);
+CREATE INDEX IF NOT EXISTS idx_lifecycle_market ON lifecycle_events (market_ticker, ts DESC);
