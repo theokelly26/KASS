@@ -73,5 +73,66 @@ module.exports = {
         PYTHONPATH: ".",
       },
     },
+    // Phase 2: Signal Processors
+    {
+      name: "kass-signal-flow",
+      script: "python",
+      args: "-m src.signals.flow.toxicity",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
+    {
+      name: "kass-signal-oi",
+      script: "python",
+      args: "-m src.signals.flow.oi_divergence",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
+    {
+      name: "kass-signal-regime",
+      script: "python",
+      args: "-m src.signals.microstructure.regime",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
+    {
+      name: "kass-signal-crossmarket",
+      script: "python",
+      args: "-m src.signals.cross_market.propagation",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
+    {
+      name: "kass-signal-lifecycle",
+      script: "python",
+      args: "-m src.signals.cross_market.lifecycle_alpha",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
+    {
+      name: "kass-aggregator",
+      script: "python",
+      args: "-m src.signals.aggregator.aggregator",
+      cwd: __dirname + "/..",
+      autorestart: true,
+      env: {
+        PYTHONPATH: ".",
+      },
+    },
   ],
 };
