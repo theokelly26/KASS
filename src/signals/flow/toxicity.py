@@ -102,13 +102,13 @@ class MarketFlowState:
 
     @property
     def dominant_side(self) -> str:
-        """Which side is the flow predominantly on."""
+        """Which side is the flow predominantly on. Requires 60%+ imbalance."""
         if self.current_bucket_volume == 0:
             return "neutral"
         buy_ratio = self.current_bucket_buy_volume / self.current_bucket_volume
-        if buy_ratio > 0.5:
+        if buy_ratio > 0.6:
             return "yes"
-        elif buy_ratio < 0.5:
+        elif buy_ratio < 0.4:
             return "no"
         return "neutral"
 
@@ -267,8 +267,8 @@ class FlowToxicityClassifier(BaseSignalProcessor):
                 if state.dominant_side == "no"
                 else SignalDirection.NEUTRAL
             ),
-            strength=0.6,
-            confidence=0.5,
+            strength=min(1.0, state.inter_arrival_rate / 10.0),
+            confidence=min(0.8, 0.3 + (state.inter_arrival_rate / 20.0)),
             urgency=SignalUrgency.IMMEDIATE,
             metadata={
                 "inter_arrival_rate": round(state.inter_arrival_rate, 2),
@@ -280,6 +280,7 @@ class FlowToxicityClassifier(BaseSignalProcessor):
     def _create_large_trade_signal(
         self, ticker: str, trade: KalshiTrade, state: MarketFlowState
     ) -> Signal:
+        size_ratio = trade.count / state.mean_trade_size if state.mean_trade_size > 0 else 0
         return Signal(
             signal_type="flow_large_trade",
             market_ticker=ticker,
@@ -289,12 +290,12 @@ class FlowToxicityClassifier(BaseSignalProcessor):
                 else SignalDirection.BUY_NO
             ),
             strength=min(1.0, trade.count / (state.mean_trade_size * self.config["size_multiplier"] * 2)),
-            confidence=0.55,
+            confidence=min(0.85, 0.4 + (size_ratio / (self.config["size_multiplier"] * 4))),
             urgency=SignalUrgency.WATCH,
             metadata={
                 "trade_size": trade.count,
                 "mean_trade_size": round(state.mean_trade_size, 2),
-                "size_ratio": round(trade.count / state.mean_trade_size, 2) if state.mean_trade_size > 0 else 0,
+                "size_ratio": round(size_ratio, 2),
                 "taker_side": trade.taker_side,
             },
         )

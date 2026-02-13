@@ -52,6 +52,12 @@ class MarketScanner:
             for m in markets_raw:
                 try:
                     market = KalshiMarket.model_validate(m)
+                    # Skip markets matching excluded event prefixes
+                    if any(
+                        market.event_ticker.startswith(p)
+                        for p in self._config.tuning.excluded_event_prefixes
+                    ):
+                        continue
                     all_markets.append(market)
                 except Exception:
                     logger.exception("market_parse_error", raw=m)

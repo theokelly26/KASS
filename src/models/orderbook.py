@@ -10,14 +10,18 @@ from pydantic import BaseModel, Field
 
 
 class OrderbookSnapshot(BaseModel):
-    """Full orderbook snapshot from the 'orderbook_snapshot' websocket message."""
+    """Full orderbook snapshot from the 'orderbook_snapshot' websocket message.
+
+    Kalshi may omit the 'no'/'no_dollars' or 'yes'/'yes_dollars' fields when
+    one side of the book is empty, so all four level fields default to [].
+    """
 
     market_ticker: str
     market_id: str
-    yes: list[list[int]] = Field(description="[[price, quantity], ...]")
-    yes_dollars: list[list[str | int]] = Field(description="[['0.50', 100], ...]")
-    no: list[list[int]]
-    no_dollars: list[list[str | int]]
+    yes: list[list[int]] = Field(default_factory=list, description="[[price, quantity], ...]")
+    yes_dollars: list[list[str | int]] = Field(default_factory=list, description="[['0.50', 100], ...]")
+    no: list[list[int]] = Field(default_factory=list)
+    no_dollars: list[list[str | int]] = Field(default_factory=list)
 
     model_config = {"frozen": True}
 

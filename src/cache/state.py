@@ -18,6 +18,39 @@ KEY_SERIES = "meta:series:{ticker}"
 KEY_HEALTH = "health:{component}"
 
 
+class TickerStateManager:
+    """Maintains current ticker state in Redis from ticker_v2 updates."""
+
+    def __init__(self, redis: aioredis.Redis) -> None:
+        self._redis = redis
+
+    async def update(self, ticker_data) -> None:
+        """Write latest ticker_v2 data to state:ticker:{ticker} for price snapshots."""
+        key = KEY_TICKER.format(ticker=ticker_data.market_ticker)
+        state = {}
+        # Only include non-None fields
+        for field in (
+            "price", "volume", "open_interest",
+            "yes_bid", "yes_ask",
+            "dollar_volume", "dollar_open_interest",
+        ):
+            val = getattr(ticker_data, field, None)
+            if val is not None:
+                state[field] = val
+        if state:
+            # Merge with existing state so partial updates don't wipe fields
+            raw = await self._redis.get(key)
+            if raw:
+                try:
+                    existing = orjson.loads(raw)
+                    existing.update(state)
+                    state = existing
+                except Exception:
+                    pass
+            await self._redis.set(key, orjson.dumps(state).decode(), ex=3600)
+            logger.debug("ticker_state_updated", ticker=ticker_data.market_ticker, fields=list(state.keys()))
+
+
 class OrderbookStateManager:
     """Maintains current orderbook state in Redis from snapshot + deltas."""
 
@@ -29,8 +62,8 @@ class OrderbookStateManager:
         key = KEY_ORDERBOOK.format(ticker=snapshot.market_ticker)
         book = {
             "market_ticker": snapshot.market_ticker,
-            "yes": {str(level[0]): level[1] for level in snapshot.yes},
-            "no": {str(level[0]): level[1] for level in snapshot.no},
+            "yes": {str(level[0]): level[1] for level in snapshot.yes} if snapshot.yes else {},
+            "no": {str(level[0]): level[1] for level in snapshot.no} if snapshot.no else {},
         }
         await self._redis.set(key, orjson.dumps(book).decode())
         logger.debug("orderbook_snapshot_applied", ticker=snapshot.market_ticker)
@@ -44,6 +77,8 @@ class OrderbookStateManager:
             return
 
         book = orjson.loads(raw)
+        if delta.side not in book:
+            book[delta.side] = {}
         side = book[delta.side]
         price_key = str(delta.price)
 

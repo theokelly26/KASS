@@ -103,7 +103,7 @@ SELECT
     )                                               AS hit_rate_15m,
     round(avg(abs(move_5m)), 4)                     AS avg_abs_move_5m,
     round(avg(abs(move_15m)), 4)                    AS avg_abs_move_15m,
-    round(avg(confidence), 4)                       AS avg_confidence
+    round(avg(confidence)::numeric, 4)                AS avg_confidence
 FROM signal_outcomes
 GROUP BY signal_type, strength_bucket
 ORDER BY signal_type, strength_bucket;
@@ -170,8 +170,8 @@ SELECT
                                                     AS avg_abs_move_5m,
     round(
         count(*) FILTER (
-            WHERE (cl.direction = 'yes' AND ps_after.yes_price > ps_at.yes_price)
-               OR (cl.direction = 'no'  AND ps_after.yes_price < ps_at.yes_price)
+            WHERE (cl.direction = 'buy_yes' AND ps_after.yes_price > ps_at.yes_price)
+               OR (cl.direction = 'buy_no'  AND ps_after.yes_price < ps_at.yes_price)
         )::numeric / NULLIF(count(*), 0),
         4
     )                                               AS directional_accuracy

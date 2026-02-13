@@ -53,12 +53,12 @@ class LifecycleAlphaScanner(BaseSignalProcessor):
         if stream == STREAM_LIFECYCLE:
             event = MarketLifecycleEvent.model_validate(message)
 
-            if event.status == "open":
+            if event.event_type == "open":
                 self.recent_opens[event.market_ticker] = time.time()
                 new_signals = await self._check_new_market_premium(event)
                 signals.extend(new_signals)
 
-            elif event.status in ("settled", "closed"):
+            elif event.event_type in ("settled", "closed", "determined"):
                 cascade_signals = await self._check_settlement_cascade(event)
                 signals.extend(cascade_signals)
 
@@ -86,7 +86,7 @@ class LifecycleAlphaScanner(BaseSignalProcessor):
                 urgency=SignalUrgency.WATCH,
                 metadata={
                     "pattern": "new_market_premium",
-                    "status": event.status,
+                    "status": event.event_type,
                     "opened_at": time.time(),
                 },
                 ttl_seconds=self.config.get("new_market_window", 300),
@@ -118,7 +118,7 @@ class LifecycleAlphaScanner(BaseSignalProcessor):
                     urgency=SignalUrgency.IMMEDIATE,
                     metadata={
                         "settled_market": event.market_ticker,
-                        "settled_status": event.status,
+                        "settled_status": event.event_type,
                         "pattern": "settlement_cascade",
                     },
                     ttl_seconds=self.config.get("settlement_cascade_window", 120),
@@ -141,15 +141,42 @@ class LifecycleAlphaScanner(BaseSignalProcessor):
         if ticker.price is None:
             return []
 
+        signals = []
+
+        # Directional new_market_open signal if price is far from 50
+        # (contrarian mean-reversion bet on initial mispricing)
+        distance_from_mid = abs(ticker.price - 50)
+        if distance_from_mid >= 15:
+            direction = (
+                SignalDirection.BUY_NO if ticker.price > 50
+                else SignalDirection.BUY_YES
+            )
+            signals.append(
+                Signal(
+                    signal_type="new_market_open",
+                    market_ticker=ticker.market_ticker,
+                    direction=direction,
+                    strength=min(1.0, distance_from_mid / 50.0),
+                    confidence=min(0.6, 0.3 + (distance_from_mid / 100.0)),
+                    urgency=SignalUrgency.WATCH,
+                    metadata={
+                        "initial_price": ticker.price,
+                        "distance_from_mid": distance_from_mid,
+                        "pattern": "new_market_directional",
+                    },
+                    ttl_seconds=self.config.get("new_market_window", 300),
+                )
+            )
+
         # Flag extreme initial prices as potential mispricing
-        if ticker.price <= 10 or ticker.price >= 90:
-            return [
+        if ticker.price <= 20 or ticker.price >= 80:
+            signals.append(
                 Signal(
                     signal_type="new_market_extreme_price",
                     market_ticker=ticker.market_ticker,
                     direction=(
                         SignalDirection.BUY_NO
-                        if ticker.price >= 90
+                        if ticker.price >= 80
                         else SignalDirection.BUY_YES
                     ),
                     strength=0.5,
@@ -161,8 +188,8 @@ class LifecycleAlphaScanner(BaseSignalProcessor):
                     },
                     ttl_seconds=self.config.get("new_market_window", 300),
                 )
-            ]
-        return []
+            )
+        return signals
 
 
 async def main() -> None:

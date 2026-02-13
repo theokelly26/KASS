@@ -13,7 +13,7 @@ class KalshiMarket(BaseModel):
 
     ticker: str
     event_ticker: str
-    series_ticker: str
+    series_ticker: str | None = None
     market_type: str
     title: str
     subtitle: str | None = None

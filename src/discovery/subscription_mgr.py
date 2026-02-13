@@ -85,7 +85,7 @@ class SubscriptionManager:
                     """
                     SELECT DISTINCT m.ticker
                     FROM markets m
-                    WHERE m.status = 'open'
+                    WHERE m.status = 'active'
                       AND (
                         -- Has recent volume
                         EXISTS (
@@ -136,7 +136,7 @@ class SubscriptionManager:
                     """
                     SELECT ticker FROM markets
                     WHERE ticker = ANY(%s)
-                      AND status = 'open'
+                      AND status = 'active'
                       AND (
                           close_time IS NULL
                           OR close_time > NOW()

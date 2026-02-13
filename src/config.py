@@ -65,6 +65,10 @@ class TuningConfig(BaseSettings):
     ws_ping_interval: int = Field(default=30, alias="WS_PING_INTERVAL")
     ws_pong_timeout: int = Field(default=10, alias="WS_PONG_TIMEOUT")
     ws_reconnect_max_delay: int = Field(default=60, alias="WS_RECONNECT_MAX_DELAY")
+    excluded_event_prefixes: list[str] = Field(
+        default=["KXMVESPORTSMULTIGAMEEXTENDED"],
+        alias="EXCLUDED_EVENT_PREFIXES",
+    )
 
 
 class LoggingConfig(BaseSettings):

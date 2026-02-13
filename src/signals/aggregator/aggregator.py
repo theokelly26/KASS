@@ -32,15 +32,15 @@ logger = structlog.get_logger(__name__)
 
 # Signal type weights — how much each signal contributes to composite
 SIGNAL_WEIGHTS = {
-    "flow_toxicity": 0.30,
-    "flow_burst": 0.15,
-    "flow_large_trade": 0.10,
-    "oi_divergence": 0.25,
-    "cross_market_propagation": 0.20,
+    "flow_toxicity": 0.35,
+    "flow_burst": 0.08,
+    "flow_large_trade": 0.05,
+    "oi_divergence": 0.30,
+    "cross_market_propagation": 0.15,
     "signal_propagation": 0.10,
     "settlement_cascade": 0.15,
-    "new_market_open": 0.05,
-    "new_market_extreme_price": 0.10,
+    "new_market_open": 0.02,
+    "new_market_extreme_price": 0.05,
     "regime_change": 0.05,
 }
 

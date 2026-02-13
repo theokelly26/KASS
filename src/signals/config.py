@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 FLOW_TOXICITY_CONFIG = {
-    "vpin_threshold": 0.70,
-    "rolling_vpin_threshold": 0.60,
-    "bucket_size": 50,
+    "vpin_threshold": 0.80,
+    "rolling_vpin_threshold": 0.70,
+    "bucket_size": 25,
     "window_size": 20,
     "burst_window_seconds": 5.0,
-    "burst_min_trades": 5,
+    "burst_min_trades": 8,
     "size_multiplier": 3.0,
-    "min_market_volume": 100,
+    "min_market_volume": 200,
 }
 
 OI_DIVERGENCE_CONFIG = {
-    "min_observations": 10,
-    "oi_zscore_threshold": 1.5,
+    "min_observations": 30,
+    "oi_zscore_threshold": 2.5,
     "window_size": 50,
     "dollar_oi_confirmation_boost": 0.15,
     "min_price_for_signal": 5,
@@ -48,7 +48,7 @@ LIFECYCLE_CONFIG = {
 }
 
 AGGREGATOR_CONFIG = {
-    "min_composite_score": 0.3,
+    "min_composite_score": 0.4,
     "cleanup_interval": 60,
     "max_active_signals_per_market": 20,
     "publish_cooldown": 10,

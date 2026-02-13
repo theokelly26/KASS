@@ -1,13 +1,14 @@
 """Provision Grafana with KASS datasource and dashboards via HTTP API."""
 
 import json
+import os
 import sys
 from pathlib import Path
 
 import httpx
 
 GRAFANA_URL = "http://localhost:3000"
-GRAFANA_AUTH = ("admin", "admin")
+GRAFANA_AUTH = ("admin", os.environ.get("GRAFANA_PASSWORD", "admin"))
 DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "grafana" / "dashboards"
 
 
@@ -21,6 +22,7 @@ def create_datasource(client: httpx.Client) -> None:
 
     payload = {
         "name": "KASS-TimescaleDB",
+        "uid": "kass-tsdb",
         "type": "grafana-postgresql-datasource",
         "url": "localhost:5432",
         "database": "kalshi_alpha",

@@ -2,10 +2,14 @@
   "uid": "kass-market-activity",
   "title": "KASS Market Activity",
   "description": "Per-market drill-down: volume rankings, regime states, composite signals, trade tape, and price history.",
-  "tags": ["kass", "markets", "activity"],
+  "tags": [
+    "kass",
+    "markets",
+    "activity"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 3,
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -15,8 +19,23 @@
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"],
-    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d"]
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d"
+    ]
   },
   "templating": {
     "list": [
@@ -24,7 +43,10 @@
         "name": "market_ticker",
         "type": "query",
         "label": "Market Ticker",
-        "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "kass-tsdb"
+        },
         "definition": "SELECT DISTINCT market_ticker FROM trades WHERE ts > NOW() - INTERVAL '24 hours' ORDER BY market_ticker",
         "query": "SELECT DISTINCT market_ticker FROM trades WHERE ts > NOW() - INTERVAL '24 hours' ORDER BY market_ticker",
         "current": {
@@ -47,11 +69,31 @@
           "value": "6h"
         },
         "options": [
-          { "text": "15m", "value": "15m", "selected": false },
-          { "text": "1h", "value": "1h", "selected": false },
-          { "text": "6h", "value": "6h", "selected": true },
-          { "text": "24h", "value": "24h", "selected": false },
-          { "text": "7d", "value": "7d", "selected": false }
+          {
+            "text": "15m",
+            "value": "15m",
+            "selected": false
+          },
+          {
+            "text": "1h",
+            "value": "1h",
+            "selected": false
+          },
+          {
+            "text": "6h",
+            "value": "6h",
+            "selected": true
+          },
+          {
+            "text": "24h",
+            "value": "24h",
+            "selected": false
+          },
+          {
+            "text": "7d",
+            "value": "7d",
+            "selected": false
+          }
         ],
         "query": "15m,1h,6h,24h,7d",
         "hide": 0
@@ -62,7 +104,10 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -77,27 +122,45 @@
       "title": "Top Markets by Volume",
       "description": "Markets ranked by total traded volume in the selected time window.",
       "type": "table",
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kass-tsdb"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "align": "auto",
-            "cellOptions": { "type": "auto" },
+            "cellOptions": {
+              "type": "auto"
+            },
             "inspect": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null }
+              {
+                "color": "green",
+                "value": null
+              }
             ]
           },
           "mappings": []
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "volume" },
+            "matcher": {
+              "id": "byName",
+              "options": "volume"
+            },
             "properties": [
               {
                 "id": "custom.cellOptions",
@@ -111,12 +174,21 @@
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "#5794F2", "value": null },
-                    { "color": "#73BF69", "value": 1000 }
+                    {
+                      "color": "#5794F2",
+                      "value": null
+                    },
+                    {
+                      "color": "#73BF69",
+                      "value": 1000
+                    }
                   ]
                 }
               },
-              { "id": "min", "value": 0 }
+              {
+                "id": "min",
+                "value": 0
+              }
             ]
           }
         ]
@@ -124,13 +196,29 @@
       "options": {
         "showHeader": true,
         "cellHeight": "sm",
-        "footer": { "countRows": false, "enablePagination": true, "fields": "", "reducer": ["sum"], "show": false },
-        "sortBy": [{ "desc": true, "displayName": "volume" }]
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "volume"
+          }
+        ]
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kass-tsdb"
+          },
           "format": "table",
           "rawSql": "SELECT\n  market_ticker,\n  COUNT(*) AS trades,\n  SUM(count) AS volume\nFROM trades\nWHERE $__timeFilter(ts)\nGROUP BY market_ticker\nORDER BY volume DESC\nLIMIT 20;",
           "editorMode": "code"
@@ -142,27 +230,45 @@
       "title": "Top Markets by Signals",
       "description": "Markets with the most signal activity in the selected time window.",
       "type": "table",
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kass-tsdb"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "align": "auto",
-            "cellOptions": { "type": "auto" },
+            "cellOptions": {
+              "type": "auto"
+            },
             "inspect": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null }
+              {
+                "color": "green",
+                "value": null
+              }
             ]
           },
           "mappings": []
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "signal_count" },
+            "matcher": {
+              "id": "byName",
+              "options": "signal_count"
+            },
             "properties": [
               {
                 "id": "custom.cellOptions",
@@ -176,12 +282,21 @@
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "#5794F2", "value": null },
-                    { "color": "#73BF69", "value": 10 }
+                    {
+                      "color": "#5794F2",
+                      "value": null
+                    },
+                    {
+                      "color": "#73BF69",
+                      "value": 10
+                    }
                   ]
                 }
               },
-              { "id": "min", "value": 0 }
+              {
+                "id": "min",
+                "value": 0
+              }
             ]
           }
         ]
@@ -189,71 +304,158 @@
       "options": {
         "showHeader": true,
         "cellHeight": "sm",
-        "footer": { "countRows": false, "enablePagination": true, "fields": "", "reducer": ["sum"], "show": false },
-        "sortBy": [{ "desc": true, "displayName": "signal_count" }]
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "signal_count"
+          }
+        ]
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kass-tsdb"
+          },
           "format": "table",
-          "rawSql": "SELECT\n  market_ticker,\n  COUNT(*) AS signal_count,\n  COUNT(DISTINCT signal_type) AS unique_types,\n  ROUND(AVG(strength), 3) AS avg_strength,\n  ROUND(AVG(confidence), 3) AS avg_confidence\nFROM signal_log\nWHERE $__timeFilter(ts)\nGROUP BY market_ticker\nORDER BY signal_count DESC\nLIMIT 20;",
+          "rawSql": "SELECT\n  market_ticker,\n  COUNT(*) AS signal_count,\n  COUNT(DISTINCT signal_type) AS unique_types,\n  AVG(strength)::numeric(10,3) AS avg_strength,\n  AVG(confidence)::numeric(10,3) AS avg_confidence\nFROM signal_log\nWHERE $__timeFilter(ts)\nGROUP BY market_ticker\nORDER BY signal_count DESC\nLIMIT 20;",
           "editorMode": "code"
         }
-      ]
+      ],
+      "version": 3
     },
     {
       "id": 3,
       "title": "Regime Distribution",
       "description": "Current regime state for each tracked market. Based on the latest regime_log entry per market.",
       "type": "piechart",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 9 },
-      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 9
+      },
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kass-tsdb"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
           },
           "mappings": []
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "calm" },
+            "matcher": {
+              "id": "byName",
+              "options": "calm"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "active" },
+            "matcher": {
+              "id": "byName",
+              "options": "active"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "volatile" },
+            "matcher": {
+              "id": "byName",
+              "options": "volatile"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "extreme" },
+            "matcher": {
+              "id": "byName",
+              "options": "extreme"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#F2495C",
+                  "mode": "fixed"
+                }
+              }
             ]
           }
         ]
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
         "pieType": "donut",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true },
-        "tooltip": { "mode": "single", "sort": "none" }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kass-tsdb"
+          },
           "format": "table",
           "rawSql": "SELECT\n  new_regime AS regime,\n  COUNT(*) AS market_count\nFROM (\n  SELECT DISTINCT ON (market_ticker)\n    market_ticker,\n    new_regime\n  FROM regime_log\n  ORDER BY market_ticker, ts DESC\n) latest_regimes\nGROUP BY new_regime\nORDER BY market_count DESC;",
           "editorMode": "code"
@@ -265,57 +467,109 @@
       "title": "Active Composite Signals",
       "description": "Latest composite signals with absolute score above 0.3. Shows actionable opportunities across all markets.",
       "type": "table",
-      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 9 },
-      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 9
+      },
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kass-tsdb"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "align": "auto",
-            "cellOptions": { "type": "auto" },
+            "cellOptions": {
+              "type": "auto"
+            },
             "inspect": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null }
+              {
+                "color": "green",
+                "value": null
+              }
             ]
           },
           "mappings": []
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "composite_score" },
+            "matcher": {
+              "id": "byName",
+              "options": "composite_score"
+            },
             "properties": [
               {
                 "id": "custom.cellOptions",
-                "value": { "type": "color-text" }
+                "value": {
+                  "type": "color-text"
+                }
               },
               {
                 "id": "thresholds",
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "#F2495C", "value": null },
-                    { "color": "#5794F2", "value": -0.3 },
-                    { "color": "#73BF69", "value": 0.3 }
+                    {
+                      "color": "#F2495C",
+                      "value": null
+                    },
+                    {
+                      "color": "#5794F2",
+                      "value": -0.3
+                    },
+                    {
+                      "color": "#73BF69",
+                      "value": 0.3
+                    }
                   ]
                 }
               }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "direction" },
+            "matcher": {
+              "id": "byName",
+              "options": "direction"
+            },
             "properties": [
               {
                 "id": "custom.cellOptions",
-                "value": { "type": "color-text" }
+                "value": {
+                  "type": "color-text"
+                }
               },
               {
                 "id": "mappings",
                 "value": [
-                  { "options": { "yes": { "color": "green", "index": 0, "text": "YES" } }, "type": "value" },
-                  { "options": { "no": { "color": "red", "index": 1, "text": "NO" } }, "type": "value" }
+                  {
+                    "options": {
+                      "yes": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "YES"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "no": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "NO"
+                      }
+                    },
+                    "type": "value"
+                  }
                 ]
               }
             ]
@@ -325,13 +579,29 @@
       "options": {
         "showHeader": true,
         "cellHeight": "sm",
-        "footer": { "countRows": false, "enablePagination": true, "fields": "", "reducer": ["sum"], "show": false },
-        "sortBy": [{ "desc": true, "displayName": "composite_score" }]
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "composite_score"
+          }
+        ]
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kass-tsdb"
+          },
           "format": "table",
           "rawSql": "SELECT\n  ts,\n  market_ticker,\n  direction,\n  ROUND(composite_score::numeric, 3) AS composite_score,\n  regime,\n  active_signal_count,\n  active_signal_ids\nFROM composite_log\nWHERE $__timeFilter(ts)\n  AND ABS(composite_score) >= 0.3\nORDER BY ts DESC\nLIMIT 50;",
           "editorMode": "code"
@@ -343,46 +613,93 @@
       "title": "Trade Tape",
       "description": "Recent individual trades for the selected market ticker. Use the $market_ticker dropdown to filter.",
       "type": "table",
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 17 },
-      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kass-tsdb"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "thresholds" },
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "align": "auto",
-            "cellOptions": { "type": "auto" },
+            "cellOptions": {
+              "type": "auto"
+            },
             "inspect": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null }
+              {
+                "color": "green",
+                "value": null
+              }
             ]
           },
           "mappings": []
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "taker_side" },
+            "matcher": {
+              "id": "byName",
+              "options": "taker_side"
+            },
             "properties": [
               {
                 "id": "custom.cellOptions",
-                "value": { "type": "color-text" }
+                "value": {
+                  "type": "color-text"
+                }
               },
               {
                 "id": "mappings",
                 "value": [
-                  { "options": { "yes": { "color": "green", "index": 0, "text": "BUY" } }, "type": "value" },
-                  { "options": { "no": { "color": "red", "index": 1, "text": "SELL" } }, "type": "value" }
+                  {
+                    "options": {
+                      "yes": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "BUY"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "no": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "SELL"
+                      }
+                    },
+                    "type": "value"
+                  }
                 ]
               }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "yes_price" },
+            "matcher": {
+              "id": "byName",
+              "options": "yes_price"
+            },
             "properties": [
-              { "id": "unit", "value": "short" },
-              { "id": "custom.width", "value": 80 }
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              }
             ]
           }
         ]
@@ -390,13 +707,29 @@
       "options": {
         "showHeader": true,
         "cellHeight": "sm",
-        "footer": { "countRows": false, "enablePagination": true, "fields": "", "reducer": ["sum"], "show": false },
-        "sortBy": [{ "desc": true, "displayName": "ts" }]
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "ts"
+          }
+        ]
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kass-tsdb"
+          },
           "format": "table",
           "rawSql": "SELECT\n  ts,\n  trade_id,\n  yes_price,\n  no_price,\n  count,\n  taker_side\nFROM trades\nWHERE market_ticker = '$market_ticker'\n  AND $__timeFilter(ts)\nORDER BY ts DESC\nLIMIT 100;",
           "editorMode": "code"
@@ -408,11 +741,21 @@
       "title": "Price History",
       "description": "Yes price, spread, bid/ask over time for the selected market ticker.",
       "type": "timeseries",
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 17 },
-      "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kass-tsdb"
+      },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
             "axisLabel": "price (cents)",
             "axisBorderShow": false,
@@ -423,66 +766,162 @@
             "drawStyle": "line",
             "fillOpacity": 5,
             "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
             "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
+            "scaleDistribution": {
+              "type": "linear"
+            },
             "showPoints": "never",
             "spanNulls": true,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null }
+              {
+                "color": "green",
+                "value": null
+              }
             ]
           }
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "yes_price" },
+            "matcher": {
+              "id": "byName",
+              "options": "yes_price"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } },
-              { "id": "custom.lineWidth", "value": 3 }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "yes_bid" },
+            "matcher": {
+              "id": "byName",
+              "options": "yes_bid"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } },
-              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "yes_ask" },
+            "matcher": {
+              "id": "byName",
+              "options": "yes_ask"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } },
-              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9830",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "spread" },
+            "matcher": {
+              "id": "byName",
+              "options": "spread"
+            },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "#B877D9", "mode": "fixed" } },
-              { "id": "custom.axisPlacement", "value": "right" },
-              { "id": "custom.drawStyle", "value": "bars" },
-              { "id": "custom.fillOpacity", "value": 30 }
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#B877D9",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 30
+              }
             ]
           }
         ]
       },
       "options": {
-        "legend": { "calcs": ["mean", "lastNotNull", "min", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "grafana-postgresql-datasource", "uid": "kass-tsdb" },
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kass-tsdb"
+          },
           "format": "time_series",
           "rawSql": "SELECT\n  ts AS time,\n  yes_price,\n  yes_bid,\n  yes_ask,\n  spread\nFROM price_snapshots\nWHERE market_ticker = '$market_ticker'\n  AND $__timeFilter(ts)\nORDER BY ts;",
           "editorMode": "code"
@@ -496,7 +935,9 @@
       "icon": "external link",
       "includeVars": true,
       "keepTime": true,
-      "tags": ["kass"],
+      "tags": [
+        "kass"
+      ],
       "targetBlank": false,
       "title": "KASS Dashboards",
       "tooltip": "",

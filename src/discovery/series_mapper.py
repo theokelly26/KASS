@@ -37,6 +37,16 @@ class SeriesMapper:
                 )
                 return [row[0] for row in await cur.fetchall()]
 
+    async def get_market_titles(self, event_ticker: str) -> dict[str, tuple[str, str | None]]:
+        """Get {ticker: (title, subtitle)} for all markets in an event."""
+        async with get_connection(self._pg_config) as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    "SELECT ticker, title, subtitle FROM markets WHERE event_ticker = %s",
+                    (event_ticker,),
+                )
+                return {row[0]: (row[1], row[2]) for row in await cur.fetchall()}
+
     async def get_event_markets(self, event_ticker: str) -> list[str]:
         """Get all markets for an event."""
         async with get_connection(self._pg_config) as conn:
@@ -81,7 +91,7 @@ class SeriesMapper:
                     """
                     SELECT m.series_ticker, m.event_ticker, m.ticker
                     FROM markets m
-                    WHERE m.status = 'open'
+                    WHERE m.status = 'active'
                     ORDER BY m.series_ticker, m.event_ticker, m.ticker
                     """
                 )

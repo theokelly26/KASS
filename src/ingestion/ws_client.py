@@ -18,7 +18,7 @@ import structlog
 
 from src.config import AppConfig, get_config
 from src.cache.redis_client import get_redis
-from src.cache.state import OrderbookStateManager
+from src.cache.state import OrderbookStateManager, TickerStateManager
 from src.cache.streams import RedisStreamPublisher
 from src.ingestion.ws_auth import KalshiWSAuth
 from src.ingestion.ws_router import MESSAGE_HANDLERS
@@ -62,6 +62,7 @@ class KalshiWSManager:
         self._auth = auth
         self._publisher = publisher
         self._state_mgr = state_mgr
+        self._ticker_state_mgr: TickerStateManager | None = None
         self._config = config
 
         self._ws: websockets.asyncio.client.ClientConnection | None = None
@@ -304,10 +305,16 @@ class KalshiWSManager:
         return seq > last_seq + 1
 
     async def _log_stats(self) -> None:
-        """Log message rate statistics."""
+        """Log message rate statistics and prune stale tracking dicts."""
         uptime = time.time() - self._connect_time if self._connect_time else 0
         total = sum(self._msg_counts.values())
         pub_counts = self._publisher.get_counts()
+
+        # Prune sequence_numbers for subscriptions that no longer exist
+        active_sids = set(self.subscriptions.keys())
+        stale_sids = [sid for sid in self.sequence_numbers if sid not in active_sids]
+        for sid in stale_sids:
+            del self.sequence_numbers[sid]
 
         logger.info(
             "ws_stats",
@@ -316,6 +323,7 @@ class KalshiWSManager:
             by_type=dict(self._msg_counts),
             published=pub_counts,
             subscriptions=len(self.subscriptions),
+            pruned_seqs=len(stale_sids),
         )
         self._msg_counts.clear()
 
@@ -331,11 +339,14 @@ class KalshiWSManager:
             logger.exception("trade_parse_error", msg=msg_data)
 
     async def _handle_ticker_v2(self, msg: dict) -> None:
-        """Parse ticker update, validate, publish to Redis."""
+        """Parse ticker update, validate, publish to Redis stream and state cache."""
         msg_data = msg.get("msg", {})
         try:
             ticker = KalshiTickerV2.model_validate(msg_data)
             await self._publisher.publish_ticker(ticker)
+            # Write to state:ticker:{ticker} for PriceSnapshotService
+            if self._ticker_state_mgr is not None:
+                await self._ticker_state_mgr.update(ticker)
         except Exception:
             logger.exception("ticker_parse_error", msg=msg_data)
 
@@ -419,19 +430,74 @@ async def main() -> None:
         key_id=config.kalshi.api_key_id,
         private_key_path=str(config.kalshi.private_key_path),
     )
-    redis = await get_redis(config.redis)
+
+    # Retry Redis connection on startup — transient unavailability shouldn't crash
+    redis = None
+    for attempt in range(1, 11):
+        try:
+            redis = await get_redis(config.redis)
+            # Verify connectivity with a ping
+            await redis.ping()
+            break
+        except Exception:
+            logger.exception("redis_connect_failed", attempt=attempt)
+            if attempt == 10:
+                raise
+            await asyncio.sleep(min(2 ** attempt, 30))
+
     publisher = RedisStreamPublisher(redis)
     state_mgr = OrderbookStateManager(redis)
+    ticker_state_mgr = TickerStateManager(redis)
 
     manager = KalshiWSManager(auth, publisher, state_mgr, config)
+    manager._ticker_state_mgr = ticker_state_mgr
 
-    # Subscribe to all broadcast channels
-    await manager.subscribe(["ticker_v2"])
-    await manager.subscribe(["trade"])
-    await manager.subscribe(["market_lifecycle_v2"])
+    # Use SubscriptionManager for broadcast channels + dynamic orderbook subs
+    from src.discovery.subscription_mgr import SubscriptionManager
 
-    # Connect and run forever
-    await manager.connect()
+    sub_mgr = SubscriptionManager(manager, config.postgres)
+    await sub_mgr.initialize()  # subscribes to ticker_v2, trade, market_lifecycle_v2
+
+    async def reconcile_loop():
+        # Wait for actual WebSocket connection instead of fixed sleep
+        while not manager._connected:
+            await asyncio.sleep(1)
+        logger.info("reconcile_loop_started")
+        while True:
+            try:
+                # Only reconcile when connected — skip if mid-reconnect
+                if manager._connected:
+                    await sub_mgr.reconcile()
+            except Exception:
+                logger.exception("reconcile_error")
+            await asyncio.sleep(60)
+
+    # Supervise both tasks — restart either if it crashes
+    async def supervised_gather():
+        tasks = {
+            "ws_connect": asyncio.create_task(manager.connect()),
+            "reconcile": asyncio.create_task(reconcile_loop()),
+        }
+        while True:
+            done, _ = await asyncio.wait(
+                tasks.values(), return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in done:
+                name = next(k for k, v in tasks.items() if v is task)
+                exc = task.exception()
+                if exc:
+                    logger.error("task_crashed", task=name, error=str(exc))
+                else:
+                    logger.warning("task_exited", task=name)
+                # Restart the crashed/exited task
+                await asyncio.sleep(2)
+                if name == "ws_connect":
+                    tasks[name] = asyncio.create_task(manager.connect())
+                else:
+                    tasks[name] = asyncio.create_task(reconcile_loop())
+                logger.info("task_restarted", task=name)
+
+    await supervised_gather()
 
 
 if __name__ == "__main__":

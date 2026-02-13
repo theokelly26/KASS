@@ -6,8 +6,9 @@ module.exports = {
       args: "-m src.ingestion.ws_client",
       cwd: __dirname + "/..",
       autorestart: true,
-      max_restarts: 50,
+      max_restarts: 0,  // unlimited restarts — this is the critical data pipeline
       restart_delay: 5000,
+      kill_timeout: 10000,  // 10s for graceful Redis/Postgres disconnect
       env: {
         PYTHONPATH: ".",
       },
